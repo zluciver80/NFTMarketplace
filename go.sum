@@ -1,0 +1,6 @@
+github.com/gin-gonic/gin v1.7.4 h1:NQNAI/lue7YWsCivLsEsLbYho8R36i2ajbwsKklrqT8=
+github.com/gin-gonic/gin v1.7.4/go.mod h1:eZefX4v40uTwnouV0xyiDbl0oMFeYs+oMSlP78aSLk4=
+github.com/jinzhu/gorm v1.9.16 h1:aF9FUVqN1XskYMD3bxg3hQ1rQGkAFtIhR72jW26dJpk=
+github.com/jinzhu/gorm v1.9.16/go.mod h1:j4aK5uDb2SRBQ2bHPAZOTZ4ggQLHc14XZzVgA6UDBrM=
+github.com/joho/godotenv v1.4.0 h1:2gKN/TtpBSu4XChb1rUpOrZwVC+9E+idP1EPsF2KHEI=
+github.com/joho/godotenv v1.4.0/go.mod h1:hO/3uA7DlOj6CkEqc6Of8o5D8g6vDoZ9u0nAbU1Tnzc=
