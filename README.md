@@ -1,1 +1,28 @@
-The SolanaNFTMarketplace project's repository offers a comprehensive solution for enabling digital creators and collectors to interact seamlessly on the Solana blockchain. It contains a JavaScript frontend logic file that facilitates user interactions such as entering NFT details, managing user information, authenticating users, and displaying NFT collections. Leveraging Solana's blockchain technology, this marketplace ensures a secure, efficient, and user-friendly environment for buying, selling, and trading NFTs. Through this project, we aim to empower the community by providing a platform that supports the vibrant ecosystem of digital art and collectibles.
+# SolanaNFTMarketplace
+
+This project is a decentralized NFT marketplace that allows users to create, buy, and sell NFTs using Solana for the blockchain backend, Go for the server, and HTML/CSS/JavaScript for the frontend.
+
+## Structure
+
+- **HTML/CSS/JavaScript**: Handles the frontend interface.
+- **Go**: Manages backend processing and database interactions.
+- **Solana**: Manages decentralized NFT transactions on the Solana blockchain.
+
+## Setup
+
+### HTML/CSS/JavaScript
+1. Navigate to the `root` directory.
+2. Install the required dependencies:
+    ```
+    npm install
+    ```
+3. Start the development server:
+    ```
+    npm start
+    ```
+
+### Go
+1. Install Go if it is not already installed.
+2. Navigate to the project directory and set up the environment variables by creating a `.env` file in the `root` directory with the following content:
+    ```
+    DATABASE_URL=postgres
