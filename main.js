@@ -7,25 +7,25 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL;
-const SOLANA_NETWORK = process.env.REACT_APP_SOLANA_NETWORK;
+const API_ENDPOINT_URL = process.env.REACT_APP_API_URL;
+const SOLANA_CLUSTER_NETWORK = process.env.REACT_APP_SOLANA_DETAIL_NETWORK;
 
-const network = clusterApiUrl(SOLANA_NETWORK);
-const connection = new Connection(network, 'confirmed');
+const solanaNetworkURL = clusterApiUrl(SOLANA_CLUSTER_NETWORK);
+const solanaConnection = new Connection(solanaNetworkURL, 'confirmed');
 
-const wallet = useWallet();
+const userWallet = useWallet();
 
-async function fetchNFTData() {
+async function getNFTsFromAPI() {
     try {
-        const { data } = await axios.get(`${API_URL}/nfts`);
-        return data;
+        const response = await axios.get(`${API_ENDPOINTUR}/nfts`);
+        return response.data;
     } catch (error) {
-        console.error('Error fetching NFT data:', error);
+        console.error('Failed to fetch NFT data:', error);
     }
 }
 
-const DisplayNFTs = ({ nfts }) => {
-    if (!nfts.length) return <p>No NFTs available</p>;
+const NFTDisplay = ({ nfts }) => {
+    if (!nfts.length) return <p>No NFTs found</p>;
     
     return (
         <div>
@@ -40,7 +40,7 @@ const DisplayNFTs = ({ nfts }) => {
     );
 };
 
-const Auth = () => {
+const WalletAuthentication = () => {
     const { connected, connect, disconnect } = useWallet();
   
     return (
@@ -54,20 +54,20 @@ const Auth = () => {
     );
 };
 
-const App = () => {
-    const [nfts, setNfts] = useState([]);
+const NFTMarketplaceApp = () => {
+    const [nftCollection, setNftCollection] = useState([]);
 
     useEffect(() => {
-        fetchNFTData().then(setNfts);
+        getNFTsFromAPI().then(setNftCollection);
     }, []);
 
     return (
         <Router>
             <div>
-                <Auth />
+                <WalletAuthentication />
                 <Switch>
                     <Route path="/">
-                        <DisplayNFTs nfts={nfts} />
+                        <NFTDisplay nfts={nftCollection} />
                     </Route>
                 </Switch>
             </div>
@@ -75,4 +75,4 @@ const App = () => {
     );
 };
 
-export default App;
+export default NFTMarketplaceApp;
