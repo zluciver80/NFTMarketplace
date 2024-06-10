@@ -1,31 +1,28 @@
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
-import { Program, AnchorProvider, web3, utils } from '@project-serum/anchor';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { useWallet, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import axios from 'axios';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, clusterApiUrl } from '@solana/web3.js';
 
 const API_ENDPOINT_URL = process.env.REACT_APP_API_URL;
-const SOLANA_CLUSTER_NETWORK = process.env.REACT_APP_SOLANA_DETAIL_NETWORK;
+const SOLANA_CLUSTER_NETWORK = process.env.REACT_APP_SOLANA_NETWORK;
 
 const solanaNetworkURL = clusterApiUrl(SOLANA_CLUSTER_NETWORK);
-const solanaConnection = new Connection(solanaNetworkURL, 'confirmed');
+const blockchainConnection = new Connection(solanaNetworkURL, 'confirmed');
 
 const userWallet = useWallet();
 
-async function getNFTsFromAPI() {
+async function fetchNFTCollection() {
     try {
-        const response = await axios.get(`${API_ENDPOINTUR}/nfts`);
+        const response = await axios.get(`${API_ENDPOINT_URL}/nfts`);
         return response.data;
     } catch (error) {
-        console.error('Failed to fetch NFT data:', error);
+        console.error('Error fetching NFT collection:', error);
     }
 }
 
-const NFTDisplay = ({ nfts }) => {
-    if (!nfts.length) return <p>No NFTs found</p>;
+const NFTGallery = ({ nfts }) => {
+    if (!nfts.length) return <p>No NFTs found.</p>;
     
     return (
         <div>
@@ -40,9 +37,9 @@ const NFTDisplay = ({ nfts }) => {
     );
 };
 
-const WalletAuthentication = () => {
+const WalletConnectButton = () => {
     const { connected, connect, disconnect } = useWallet();
-  
+
     return (
         <div>
             {!connected ? (
@@ -54,20 +51,20 @@ const WalletAuthentication = () => {
     );
 };
 
-const NFTMarketplaceApp = () => {
-    const [nftCollection, setNftCollection] = useState([]);
+const NFTMarketplace = () => {
+    const [nftCollection, setNFTCollection] = useState([]);
 
     useEffect(() => {
-        getNFTsFromAPI().then(setNftCollection);
+        fetchNFTCollection().then(setNFTCollection);
     }, []);
 
     return (
         <Router>
             <div>
-                <WalletAuthentication />
+                <WalletConnectButton />
                 <Switch>
                     <Route path="/">
-                        <NFTDisplay nfts={nftCollection} />
+                        <NFTGallery nfts={nftCollection} />
                     </Route>
                 </Switch>
             </div>
@@ -75,4 +72,4 @@ const NFTMarketplaceApp = () => {
     );
 };
 
-export default NFTMarketplaceApp;
+export default NFTMarketplace;
