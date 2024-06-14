@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"os"
 )
 
 var (
-	port = os.Getenv("PORT")
+	port  = os.Getenv("PORT")
 	users []map[string]string
 	nfts  []map[string]string
 )
@@ -15,6 +16,7 @@ var (
 func init() {
 	users = append(users, map[string]string{"id": "1", "name": "John Doe"})
 	nfts = append(nfts, map[string]string{"id": "1", "name": "CryptoKitty #001", "owner": "John Doe"})
+	log.Println("Initial users and NFTs loaded.")
 }
 
 func main() {
@@ -59,6 +61,8 @@ func CreateNFT(c *gin.Context) {
 		return
 	}
 	nfts = append(nfts, nft)
+
+	log.Println("NFT created:", nft)
 	c.JSON(http.StatusCreated, nft)
 }
 
@@ -73,6 +77,7 @@ func UpdateNFT(c *gin.Context) {
 	for i, item := range nfts {
 		if item["id"] == id {
 			nfts[i] = nft
+			log.Println("NFT updated:", nft)
 			c.JSON(http.StatusOK, nft)
 			return
 		}
@@ -86,6 +91,7 @@ func DeleteNFT(c *gin.Context) {
 	for i, item := range nfts {
 		if item["id"] == id {
 			nfts = append(nfts[:i], nfts[i+1:]...)
+			log.Println("NFT deleted:", item)
 			c.JSON(http.StatusOK, gin.H{"message": "NFT deleted"})
 			return
 		}
@@ -104,6 +110,8 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 	users = append(users, user)
+
+	log.Println("User created:", user)
 	c.JSON(http.StatusCreated, user)
 }
 
@@ -114,10 +122,10 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	for i, item := range users {
 		if item["id"] == id {
 			users[i] = user
+			log.Println("User updated:", user)
 			c.JSON(http.StatusOK, user)
 			return
 		}
@@ -131,11 +139,12 @@ func DeleteUser(c *gin.Context) {
 	for i, item := range users {
 		if item["id"] == id {
 			users = append(users[:i], users[i+1:]...)
+			log.Println("User deleted:", item)
 			c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 			return
 		}
 	}
-	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	c.JSON(http.StatusNotFound, gin.H{"error": "User not Avaialble"})
 }
 
 func HandleQueue(c *gin.Context) {
