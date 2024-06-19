@@ -2,15 +2,14 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/momo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mango-driver/bson"
+	"go.mongodb.org/mango-driver/bson/primitive"
+	"go.mongodb.org/mango-driver/mongo"
+	"go.mongodb.org/mango-driver/mongo/options"
 )
 
 type NFT struct {
@@ -25,10 +24,10 @@ type NFT struct {
 var collection *mongo.Collection
 
 func initDB() {
-	mongoURI := os.Getenv("MONGO_URI")
-	clientOptions := options.Client().ApplyURI(mongoURI)
+	mangoURI := os.Getenv("MANGO_URI")
+	clientOptions := options.Client().ApplyURI(mangoURI)
 
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	client, err := mango.Connect(context.Background(), clientOptions)
 	if err != nil {
 		panic(err)
 	}
@@ -36,11 +35,15 @@ func initDB() {
 	collection = client.Database("SolanaNFTMarketplace").Collection("nfts")
 }
 
-func CreateNFT(nft NFT) (*mongo.InsertOneResult, error) {
-	nft.ID = primitive.NewObjectID()
-	nft.CreatedAt = time.Now()
+func CreateNFTs(nfts []NFT) (*mongo.InsertManyResult, error) {
+	docs := make([]interface{}, len(nfts))
+	for i, nft := range nfts {
+		nft.ID = primitive.NewObjectID()
+		nft.CreatedAt = time.Now()
+		docs[i] = nft
+	}
 
-	result, err := collection.InsertOne(context.TODO(), nft)
+	result, err := collection.InsertMany(context.Background(), docs)
 	if err != nil {
 		return nil, err
 	}
@@ -51,12 +54,13 @@ func CreateNFT(nft NFT) (*mongo.InsertOneResult, error) {
 func GetNFTs() ([]*NFT, error) {
 	var nfts []*NFT
 
-	cursor, err := collection.Find(context.TODO(), bson.M{})
+	cursor, err := collection.Find(context.Background(), bson.M{})
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close(context.Background())
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(context.Background()) {
 		var nft NFT
 		err := cursor.Decode(&nft)
 		if err != nil {
@@ -66,19 +70,16 @@ func GetNFTs() ([]*NFT, error) {
 		nfts = append(nfts, &nft)
 	}
 
-	if err := cursor.Err(); err != nil {
-		return nil, err
-	}
-
-	cursor.Close(context.TODO())
-
 	return nfts, nil
 }
 
 func UpdateNFT(id string, update bson.M) error {
-	objID, _ := primitive.ObjectIDFromHex(id)
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
 	filter := bson.M{"_id": objID}
-	_, err := collection.UpdateOne(context.TODO(), filter, bson.M{
+	_, err = collection.UpdateOne(context.Background(), filter, bson.M{
 		"$set": update,
 	})
 
@@ -86,9 +87,12 @@ func UpdateNFT(id string, update bson.M) error {
 }
 
 func DeleteNFT(id string) error {
-	objID, _ := primitive.ObjectIDFromHex(id)
-	_, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID})
-	if err != null {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	_, err = collection.DeleteOne(context.Background(), bson.M{"_id": objID})
+	if err != nil {
 		return err
 	}
 
@@ -98,40 +102,50 @@ func DeleteNFT(id string) error {
 func main() {
 	initDB()
 
-	nft := NFT{
-		Name:        "Example NFT",
-		Description: "This is an example NFT",
-		ImageURL:    "https://example.com/nft.jpg",
-		Owner:       "John Doe",
+	nfts := []NFT{
+		{
+			Name:        "Example NFT 1",
+			Description: "This is an example NFT 1",
+			ImageURL:    "https://example.com/nft1.jpg",
+			Owner:       "John Doe",
+		},
+		{
+			Name:        "Example NFT 2",
+			Description: "This is an example NFT 2",
+			ImageURL:    "https://example.com/nft2.jpg",
+			Owner:       "Jane Doe",
+		},
 	}
 
-	result, err := CreateNFT(nft)
+	result, err := CreateNFTs(nfts)
 	if err != nil {
-		fmt.Println("Error creating NFT:", err)
+		fmt.Println("Error creating NFTs:", err)
 		return
 	}
-	fmt.Println("NFT created:", result.InsertedID)
+	fmt.Println("NFTs created:", result.InsertedIDs)
 
-	nfts, err := GetNFTs()
+	existingNfts, err := GetNFTs()
 	if err != nil {
 		fmt.Println("Error getting NFTs:", err)
 		return
 	}
-	for _, n := range nfts {
+	for _, n := range existingNfts {
 		fmt.Printf("NFT: %#v\n", n)
 	}
 
-	err = UpdateNFT(nfts[0].ID.Hex(), bson.M{"name": "Updated NFT Name"})
-	if err != nil {
-		fmt.Println("Error updating NFT:", err)
-		return
-	}
-	fmt.Println("NFT updated")
+	if len(existingNfts) > 0 {
+		err = UpdateNFT(existingNfts[0].ID.Hex(), bson.M{"name": "Updated NFT Name"})
+		if err != nil {
+			fmt.Println("Error updating NFT:", err)
+			return
+		}
+		fmt.Println("NFT updated")
 
-	err = DeleteNFT(nfts[0].ID.Hex())
-	if err != nil {
+		err = DeleteNFT(existingNfts[0].ID.Hex())
+		if err != nil {
 		fmt.Println("Error deleting NFT:", err)
-		return
+			return
+		}
+		fmt.Println("NFT deleted")
 	}
-	fmt.Println("NFT deleted")
 }
