@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "os"
+    "sync"
     "time"
 
     "go.mongodb.org/mongo-driver/bson"
@@ -24,18 +25,20 @@ type NFT struct {
 var (
     collection *mongo.Collection
     ctx        context.Context
+    cache      []*NFT
+    mu         sync.RWMutex
 )
 
 func initDB() {
-    mangoURI := os.Getenv("MANGO_URI")
-    clientOptions := options.Client().ApplyURI(mangoURI).SetMaxPoolSize(50)
+    mongoURI := os.Getenv("MONGO_URI")
+    clientOptions := options.Client().ApplyURI(mongoURI).SetMaxPoolSize(50)
 
     client, err := mongo.Connect(context.Background(), clientOptions)
     if err != nil {
         panic(err)
     }
 
-    ctx = context.Background() 
+    ctx = context.Background()
     collection = client.Database("SolanaNFTMarketplace").Collection("nfts")
 }
 
@@ -52,10 +55,18 @@ func CreateNFTs(nfts []NFT) (*mongo.InsertManyResult, error) {
         return nil, err
     }
 
+    invalidateCache()
     return result, nil
 }
 
 func GetNFTs() ([]*NFT, error) {
+    mu.RLock()
+    if cache != nil {
+        mu.RUnlock()
+        return cache, nil
+    }
+    mu.RUnlock()
+
     var nfts []*NFT
 
     cursor, err := collection.Find(ctx, bson.M{})
@@ -74,6 +85,10 @@ func GetNFTs() ([]*NFT, error) {
         nfts = append(nfts, &nft)
     }
 
+    mu.Lock()
+    cache = nfts
+    mu.Unlock()
+
     return nfts, nil
 }
 
@@ -87,6 +102,7 @@ func UpdateNFT(id string, update bson.M) error {
         "$set": update,
     })
 
+    invalidateCache()
     return err
 }
 
@@ -100,7 +116,14 @@ func DeleteNFT(id string) error {
         return err
     }
 
+    invalidateCache()
     return nil
+}
+
+func invalidateCache() {
+    mu.Lock()
+    cache = nil
+    mu.Unlock()
 }
 
 func main() {
@@ -149,6 +172,7 @@ func main() {
         if err != nil {
             fmt.Println("Error deleting NFT:", err)
             return
+        }
+        fmt.Println("NFT deleted")
     }
-    fmt.Println("NFT deleted")
 }
