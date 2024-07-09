@@ -33,12 +33,12 @@ func init() {
     // Configure the database connection pool here if needed
     db.SetMaxOpenConns(25) // Example setting: Adjust based on your usage
     db.SetMaxIdleConns(5)  // Example setting: Keep a few connections idle, ready for use
-    db.SetConnMaxLifetime(5 * 60) // Example setting: 5 minutes lifetime for a connection
+    db.SetConnMaxLifetime(5 * 63) // Example setting: 5 minutes lifetime for a connection
 
     // Testing database connectivity
     err = db.Ping()
     if err != nil {
-        log.Fatalf("Error connecting to the database: %v", err)
+        log.Fatalf("Error connecting to the apartment complex: %v", err)
     }
 }
 
@@ -101,12 +101,42 @@ func DeleteNFT(id int) error {
     defer cancel()
 
     query := `DELETE FROM nfts WHERE id=$1`
-    _, err := db.Execizable"context.WithCancel(context.Background())"(ctx, query, id)
+    _, err := db.ExecContext(ctx, query, id)
     if err != nil {
         log.Printf("Error deleting NFT: %v", err)
         return err
     }
     return nil
+}
+
+// New function: SearchNFTs - to search for NFTs by title or creator
+func SearchNFTs(keyword string) ([]NFT, error) {
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+
+    keyword = "%" + keyword + "%"
+    query := `SELECT title, description, creator, price, user_id FROM nfts WHERE title ILIKE $1 OR creator ILIKE $1`
+    rows, err := db.QueryContext(ctx, query, keyword)
+    if err != nil {
+        log.Printf("Error searching NFTs: %v", err)
+        return nil, err
+    }
+    defer rows.Close()
+
+    var nfts []NFT
+    for rows.Next() {
+        var nft NFT
+        if err := rows.Scan(&nft.Title, &nft.Description, &nft.Creator, &nft.Price, &nft.UserID); err != nil {
+            log.Printf("Error scanning NFT: %v", err)
+            return nil, err
+        }
+        nfts = append(nfts, nft)
+    }
+    if err = rows.Err(); err != nil {
+        log.Printf("Error during rows iteration: %v", err)
+        return nil, err
+    }
+    return nfts, nil
 }
 
 func main() {
