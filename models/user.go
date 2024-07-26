@@ -23,6 +23,10 @@ type User struct {
 var dbpool *pgxpool.Pool
 
 func init() {
+    setupDatabaseConnection()
+}
+
+func setupDatabaseConnection() {
     var err error
     databaseURL := os.Getenv("DATABASE_URL")
     if databaseURL == "" {
@@ -37,37 +41,53 @@ func init() {
     }
 }
 
-func CreateUser(user *User) error {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+func hashPassword(password string) (string, error) {
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
     if err != nil {
-        return fmt.Errorf("error hashing password: %w", err)
+        return "", fmt.Errorf("error hashing password: %w", err)
     }
-    user.Password = string(hashedPassword)
+    return string(hashedPassword), nil
+}
+
+func CreateUser(user *User) error {
+    var err error
+    user.Password, err = hashPassword(user.Password)
+    if err != nil {
+        return err
+    }
 
     sqlStatement := `INSERT INTO users (username, password, email, registration_date) VALUES ($1, $2, $3, $4) RETURNING id`
     if err := dbpool.QueryRow(context.Background(), sqlStatement, user.Username, user.Password, user.Email, user.RegistrationDate).Scan(&user.ID); err != nil {
-        var pgErr *pgconn.PgError
-        if ok := pgconn.As(err, &pgErr); ok {
-            return fmt.Errorf("database error %d: %s", pgErr.Code, pgErr.Message)
-        }
-        return fmt.Errorf("error inserting user into database: %w", err)
+        return handleDatabaseError(err)
     }
 
     return nil
 }
 
+func handleDatabaseError(err error) error {
+    var pgErr *pgconn.PgError
+    if ok := pgconn.As(err, &pgErr); ok {
+        return fmt.Errorf("database error %d: %s", pgErr.Code, pgErr.Message)
+    }
+    return fmt.Errorf("error: %w", err)
+}
+
 func GetUserByUsername(username string) (*User, error) {
     user := &User{}
 
-    err := dbpool.QueryRow(context.Background(), `SELECT id, username, password, email, registrationation_date FROM users WHERE username = $1`, username).Scan(&user.ID, &user.Username, &user.Password, &user.Email, &user.RegistrationDate)
+    err := dbpool.QueryRow(context.Background(), `SELECT id, username, password, email, registration_date FROM users WHERE username = $1`, username).Scan(&user.ID, &user.Username, &user.Password, &user.Email, &user.RegistrationDate)
     if err != nil {
-        if err == pgx.ErrNoRows {
-            return nil, fmt.Errorf("user not found")
-        }
-        return nil, fmt.Errorf("error retrieving user by username: %w", err)
+        return nil, handleErrorFetchingUser(err)
     }
 
     return user, nil
+}
+
+func handleErrorFetchingTopStates(err error) error {
+    if err == pgx.ErrNoRows {
+        return fmt.Errorf("user not found")
+    }
+    return fmt.Errorf("error retrieving user by username: %w", err)
 }
 
 func main() {
