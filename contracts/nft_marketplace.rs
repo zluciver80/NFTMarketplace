@@ -7,97 +7,103 @@ declare_id!("Fg6PaFyLnbtBRQdCDVLyNtQp4A6XYj9oHKtDk1y1s6Zn");
 pub mod solana_nft_marketplace {
     use super::*;
 
-    pub fn create_nft(
-        ctx: Context<CreateNft>,
-        title: String,
-        uri: String,
+    pub fn create_nft_listing(
+        ctx: Context<CreateNftListing>,
+        nft_title: String,
+        nft_uri: String,
     ) -> Result<()> {
-        let nft_account = &mut ctx.accounts.nft_account;
-        nft_account.owner = *ctx.accounts.user.key;
-        nft_account.title = title;
-        nft_account.uri = uri;
-        nft_account.listed = false;
-        nft_account.price = 0;
+        let listing_account = &mut ctx.accounts.listing_account;
+        listing_account.owner = *ctx.accounts.creator.key;
+        listing_account.title = nft_title;
+        listing_account.uri = nft_uri;
+        listing_account.is_listed = false;
+        listing_account.sale_price = 0;
         Ok(())
     }
 
-    pub fn list_nft_for_sale(ctx: Context<ListNftForSale>, price: u64) -> Result<()> {
-        let nft_account = &mut ctx.accounts.nft_account;
-        require!(price > 0, ErrorCode::PriceMustBeAboveZero);
-        require!(!nft_account.listed, ErrorCode::NftAlreadyListed);
-        nft_account.listed = true;
-        nft_account.price = price;
+    pub fn list_nft(
+        ctx: Context<ListForSale>,
+        listing_price: u64,
+    ) -> Result<()> {
+        let listing_account = &mut ctx.accounts.listing_account;
+        require!(listing_price > 0, ErrorCode::PriceMustBeAboveZero);
+        require!(!listing_account.is_listed, ErrorCode::NftAlreadyListed);
+        listing_account.is_listed = true;
+        listing_account.sale_price = listing_price;
         Ok(())
     }
 
-    pub fn buy_nft(ctx: Context<BuyNft>, expected_price: u64) -> Result<()> {
-        let nft_account = &mut ctx.accounts.nft_account;
+    pub fn purchase_nft(
+        ctx: Context<PurchaseNft>,
+        expected_sale_price: u64,
+    ) -> Result<()> {
+        let listing_account = &mut ctx.accounts.listing_account;
         
-        require!(nft_account.listed, ErrorCode::NftNotForSale);
-        require!(nft_account.price == expected_price, ErrorCode::IncorrectPrice);
+        require!(listing_account.is_listed, ErrorCode::NftNotForSale);
+        require!(listing_account.sale_price == expected_sale_price, ErrorCode::IncorrectPrice);
 
         invoke(
             &system_instruction::transfer(
-                &ctx.accounts.buyer.key,
-                &nft_account.owner,
-                nft_account.price,
+                &ctx.accounts.purchaser.key,
+                &listing_account.owner,
+                listing_account.sale_price,
             ),
             &[
-                ctx.accounts.buyer.to_account_info(),
-                ctx.accounts.nft_owner.to_account_info(),
+                ctx.accounts.purchaser.to_account_info(),
+                ctx.accounts.listing_owner.to_account_info(),
                 ctx.accounts.system_program.to_account_info(),
             ],
         )?;
 
-        nft_account.owner = *ctx.accounts.buyer.key;
-        nft_account.listed = false;
-        nft_account.price = 0;
+        listing_account.owner = *ctx.accounts.purchaser.key;
+        listing_account.is_listed = false;
+        listing_account.sale_price = 0;
 
         Ok(())
     }
 
-    pub fn get_nft_details(_ctx: Context<GetNftDetails>) -> Result<()> {
+    pub fn retrieve_nft_details(_ctx: Context<RetrieveNftDetails>) -> Result<()> {
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-pub struct CreateNft<'info> {
-    #[account(init, payer = user, space = 1024)]
-    pub nft_account: Account<'info, NftAccount>,
+pub struct CreateNftListing<'info> {
+    #[account(init, payer = creator, space = 1024)]
+    pub listing_account: Account<'info, NftListingAccount>,
     #[account(mut)]
-    pub user: Signer<'info>,
+    pub creator: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-pub struct ListNftForSale<'info> {
+pub struct ListForSale<'info> {
     #[account(mut, has_one = owner)]
-    pub nft_account: Account<'info, NftAccount>,
+    pub listing_account: Account<'info, NftListingAccount>,
     pub owner: Signer<'info>,
 }
 
 #[derive(Accounts)]
-pub struct BuyNft<'info> {
+pub struct PurchaseNft<'info> {
     #[account(mut, has_one = owner)]
-    pub nft_account: Account<'info, NftAccount>,
+    pub listing_account: Account<'info, NftListingAccount>,
     #[account(mut)]
-    pub nft_owner: AccountInfo<'info>,
+    pub listing_owner: AccountInfo<'info>,
     #[account(mut)]
-    pub buyer: Signer<'info>,
+    pub purchaser: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-pub struct GetNftDetails {}
+pub struct RetrieveNftDetails {}
 
 #[account]
-pub struct NftAccount {
+pub struct NftListingAccount {
     pub owner: Pubkey,
     pub title: String,
     pub uri: String,
-    pub listed: bool,
-    pub price: u64,
+    pub is_listed: bool,
+    pub sale_price: u64,
 }
 
 #[error_code]
