@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana NFT Marketplace</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to SolanaNFTMarketplace</h1>
+    </header>
+    <section id="create-nft">
+        <h2>Create NFT</h2>
+        <form action="#" method="post">
+            <label for="nft-name">NFT Name:</label>
+            <input type="text" id="nft-name" name="nft-name" required>
+            <label for="nft-image">NFT Image:</label>
+            <input type="file" id="nft-image" name="nft-image" required>
+            <label for="nft-price">Price (SOL):</label>
+            <input type="number" step="0.01" id="nft-price" name="nft-price" required>
+            <input type="submit" value="Create NFT">
+        </form>
+    </section>
+    <section id="view-nfts">
+        <h2>Available NFTs</h2>
+        <div id="nft-gallery">
+        </div>
+    </section>
+    <section id="user-auth">
+        <h2>User Registration/Login</h2>
+        <form id="register-form" action="#" method="post">
+            <h3>Register</h3>
+            <label for="new-username">Username:</label>
+            <input type="text" id="new-username" name="new-username" required>
+            <label for="new-password">Password:</label>
+            <input type="password" id="new-password" name="new-password" required>
+            <input type="submit" value="Register">
+        </form>
+        <form id="login-form" action="#" method="post">
+            <h3>Login</h3>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <input type="submit" value="Login">
+        </form>
+    </section>
+    <script>
+        // Assuming env variables are passed to JavaScript, if needed
+    </script>
+</body>
+</html>
