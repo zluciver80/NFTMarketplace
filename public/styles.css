@@ -4,40 +4,50 @@ body {
     background-color: #f4f4f4;
     color: #333;
 }
+
 .header {
     background-color: #333;
     color: #fff;
     padding: 20px;
     text-align: center;
 }
+
 .nft-gallery {
     display: grid;
     grid-gap: 15px;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     padding: 20px;
 }
+
 .nft-item {
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 5px;
     overflow: hidden;
-    transition: transform 0.2s;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
 .nft-item:hover {
     transform: scale(1.05);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
+
 .nft-img {
     width: 100%;
     height: auto;
     display: block;
 }
+
 .nft-info {
     padding: 15px;
 }
+
 .nft-title, .nft-price {
     margin: 0;
     margin-bottom: 10px;
 }
+
 .btn {
     display: inline-block;
     padding: 10px 20px;
@@ -46,19 +56,25 @@ body {
     text-decoration: none;
     border-radius: 5px;
     text-align: center;
+    transition: background-color 0.2s, transform 0.2s;
 }
+
 .btn:hover {
     background-color: #0056b3;
+    transform: translateY(-2px);
 }
+
 @media only screen and (max-width: 768px) {
     .nft-gallery {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
 }
+
 @media only screen and (max-width: 480px) {
     .header {
         padding: 10px;
     }
+
     .btn {
         padding: 8px 16px;
     }
